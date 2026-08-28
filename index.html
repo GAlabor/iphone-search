@@ -1,13 +1,198 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="it">
 <head>
-  <meta charset="UTF-8">
-  <title>Sito aggiornato</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Ricerca iPhone usati su Amazon</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+      background: #f3f4f6;
+      font-family: Arial, sans-serif;
+      color: #172033;
+    }
+    main {
+      width: min(100%, 440px);
+      padding: 28px;
+      background: white;
+      border-radius: 14px;
+      box-shadow: 0 8px 28px rgba(0, 0, 0, .10);
+    }
+    h1 { margin: 0 0 8px; font-size: 24px; }
+    p { margin: 0 0 24px; color: #5d6574; line-height: 1.45; }
+    .valori { display: flex; justify-content: space-between; gap: 14px; font-weight: 700; }
+    .valori label { flex: 1; }
+    .valori label:last-child { text-align: right; }
+    .valori input {
+      width: 82px;
+      margin-left: 4px;
+      padding: 5px 7px;
+      border: 1px solid #b9bec8;
+      border-radius: 7px;
+      font: inherit;
+      text-align: right;
+    }
+    .slider {
+      position: relative;
+      height: 42px;
+      margin-top: 12px;
+    }
+    .traccia, .selezione {
+      position: absolute;
+      top: 18px;
+      right: 0;
+      left: 0;
+      height: 7px;
+      border-radius: 999px;
+    }
+    .traccia { background: #d8dce3; }
+    .selezione { background: #ff9900; }
+    input[type="range"] {
+      position: absolute;
+      top: 8px;
+      left: 0;
+      width: 100%;
+      height: 27px;
+      margin: 0;
+      appearance: none;
+      background: transparent;
+      pointer-events: none;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      width: 24px;
+      height: 24px;
+      appearance: none;
+      border: 3px solid white;
+      border-radius: 50%;
+      background: #172033;
+      box-shadow: 0 1px 5px rgba(0, 0, 0, .35);
+      cursor: grab;
+      pointer-events: auto;
+    }
+    input[type="range"]::-moz-range-thumb {
+      width: 18px;
+      height: 18px;
+      border: 3px solid white;
+      border-radius: 50%;
+      background: #172033;
+      box-shadow: 0 1px 5px rgba(0, 0, 0, .35);
+      cursor: grab;
+      pointer-events: auto;
+    }
+    .limiti { display: flex; justify-content: space-between; color: #747b88; font-size: 12px; }
+    button {
+      width: 100%;
+      margin-top: 20px;
+      padding: 13px 16px;
+      border: 0;
+      border-radius: 9px;
+      background: #ff9900;
+      color: #111;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    button:hover { background: #e88b00; }
+    #errore { min-height: 20px; margin: 10px 0 0; color: #b42318; font-size: 14px; }
+  </style>
 </head>
 <body>
-  <h1>Il sistema è stato aggiornato</h1>
-  <p>Alle ore: <strong>20:45:25</strong></p>
-  <p>Del giorno: <strong>29/04/2026</strong></p>
-  <p>Evento GitHub Actions: <strong>workflow_dispatch</strong></p>
+  <main>
+    <h1>iPhone Apple usati</h1>
+    <p>Modifica il prezzo e aggiorna la ricerca su Amazon, ordinata dal meno caro.</p>
+
+    <form id="ricerca">
+      <div class="valori">
+        <label>Minimo: <input id="min-valore" type="number" min="100" max="500" step="10" value="200" aria-label="Inserisci prezzo minimo"> €</label>
+        <label>Massimo: <input id="max-valore" type="number" min="100" max="500" step="10" value="390" aria-label="Inserisci prezzo massimo"> €</label>
+      </div>
+      <div class="slider">
+        <div class="traccia"></div>
+        <div class="selezione" id="selezione"></div>
+        <input id="min" aria-label="Prezzo minimo" type="range" min="100" max="500" step="10" value="200">
+        <input id="max" aria-label="Prezzo massimo" type="range" min="100" max="500" step="10" value="390">
+      </div>
+      <div class="limiti"><span>100 €</span><span>500 €</span></div>
+      <button type="submit">Aggiorna ricerca</button>
+      <div id="errore" role="alert"></div>
+    </form>
+  </main>
+
+  <script>
+    const inputMin = document.getElementById('min');
+    const inputMax = document.getElementById('max');
+    const valoreMin = document.getElementById('min-valore');
+    const valoreMax = document.getElementById('max-valore');
+    const selezione = document.getElementById('selezione');
+
+    function aggiornaBarra(mosso) {
+      let minimo = Number(inputMin.value);
+      let massimo = Number(inputMax.value);
+
+      if (minimo > massimo) {
+        if (mosso === 'min') inputMax.value = minimo;
+        else inputMin.value = massimo;
+        minimo = Number(inputMin.value);
+        massimo = Number(inputMax.value);
+      }
+
+      valoreMin.value = minimo;
+      valoreMax.value = massimo;
+      selezione.style.left = `${((minimo - 100) / 400) * 100}%`;
+      selezione.style.right = `${100 - ((massimo - 100) / 400) * 100}%`;
+    }
+
+    inputMin.addEventListener('input', () => aggiornaBarra('min'));
+    inputMax.addEventListener('input', () => aggiornaBarra('max'));
+
+    function applicaPrezzoManuale(campo) {
+      const inputTesto = campo === 'min' ? valoreMin : valoreMax;
+      let valore = Number(inputTesto.value);
+      if (!Number.isFinite(valore)) valore = Number(campo === 'min' ? inputMin.value : inputMax.value);
+      valore = Math.max(100, Math.min(500, Math.round(valore / 10) * 10));
+      if (campo === 'min') inputMin.value = valore;
+      else inputMax.value = valore;
+      aggiornaBarra(campo);
+    }
+
+    valoreMin.addEventListener('change', () => applicaPrezzoManuale('min'));
+    valoreMax.addEventListener('change', () => applicaPrezzoManuale('max'));
+    valoreMin.addEventListener('keydown', event => {
+      if (event.key === 'Enter') { event.preventDefault(); applicaPrezzoManuale('min'); }
+    });
+    valoreMax.addEventListener('keydown', event => {
+      if (event.key === 'Enter') { event.preventDefault(); applicaPrezzoManuale('max'); }
+    });
+    aggiornaBarra();
+
+    document.getElementById('ricerca').addEventListener('submit', function (event) {
+      event.preventDefault();
+
+      const minimo = Number(document.getElementById('min').value);
+      const massimo = Number(document.getElementById('max').value);
+      const errore = document.getElementById('errore');
+
+      if (minimo < 0 || massimo < 0 || minimo > massimo) {
+        errore.textContent = 'Controlla i prezzi: il minimo non può superare il massimo.';
+        return;
+      }
+
+      errore.textContent = '';
+      const prezzo = `p_36:${Math.round(minimo * 100)}-${Math.round(massimo * 100)}`;
+      const filtri = `${prezzo},p_n_condition-type:15137403031,p_123:110955`;
+      const url = new URL('https://www.amazon.it/s');
+      url.searchParams.set('k', 'iphone');
+      url.searchParams.set('rh', filtri);
+      url.searchParams.set('s', 'price-asc-rank');
+      url.searchParams.set('dc', '');
+
+      window.location.href = url.toString();
+    });
+  </script>
 </body>
 </html>
